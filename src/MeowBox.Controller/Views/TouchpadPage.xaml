@@ -290,104 +290,150 @@
                         x:Name="TouchpadHardwareControlPanel"
                         Grid.Column="1"
                         Style="{StaticResource InsetPanelCardStyle}">
-                        <StackPanel Spacing="14">
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="112" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                        <StackPanel Spacing="12">
+                            <Border Style="{StaticResource SubtlePanelCardStyle}" Padding="12">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="96" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
 
-                            <TextBlock
-                                    x:Uid="TouchpadPressSensitivityLabelText"
-                                    VerticalAlignment="Center"
-                                    Style="{StaticResource CardBodyTextBlockStyle}"
-                                    Text="Press sensitivity" />
+                                        <TextBlock
+                                            x:Uid="TouchpadPressSensitivityLabelText"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource CardBodyTextBlockStyle}"
+                                            Text="Light threshold" />
 
-                                <ComboBox
-                                    x:Name="TouchpadPressSensitivityComboBox"
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    Width="108"
-                                    SelectionChanged="OnTouchpadPressSensitivitySelectionChanged">
-                                    <ComboBoxItem x:Uid="TouchpadPressSensitivityLowItem" Content="Low" Tag="1" />
-                                    <ComboBoxItem x:Uid="TouchpadPressSensitivityMediumItem" Content="Medium" Tag="2" />
-                                    <ComboBoxItem x:Uid="TouchpadPressSensitivityHighItem" Content="High" Tag="3" />
-                                </ComboBox>
-                            </Grid>
+                                        <ComboBox
+                                            x:Name="TouchpadLightPressThresholdComboBox"
+                                            Grid.Column="1"
+                                            Width="112"
+                                            HorizontalAlignment="Left"
+                                            SelectionChanged="OnTouchpadPressThresholdSelectionChanged">
+                                            <ComboBoxItem x:Uid="TouchpadLevelLightItem" Content="Light" Tag="75" />
+                                            <ComboBoxItem x:Uid="TouchpadLevelLighterItem" Content="Lighter" Tag="100" />
+                                            <ComboBoxItem x:Uid="TouchpadLevelMediumItem" Content="Medium" Tag="125" />
+                                            <ComboBoxItem x:Uid="TouchpadLevelHeavierItem" Content="Heavier" Tag="150" />
+                                            <ComboBoxItem x:Uid="TouchpadLevelHeavyItem" Content="Heavy" Tag="175" />
+                                        </ComboBox>
+                                    </Grid>
 
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="112" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="96" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
 
-                                <TextBlock
-                                    x:Uid="TouchpadFeedbackLabelText"
-                                    VerticalAlignment="Center"
-                                    Style="{StaticResource CardBodyTextBlockStyle}"
-                                    Text="Vibration strength" />
+                                        <TextBlock
+                                            x:Uid="TouchpadFeedbackLabelText"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource CardBodyTextBlockStyle}"
+                                            Text="Light feedback" />
 
-                                <ComboBox
-                                    x:Name="TouchpadFeedbackComboBox"
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    Width="108"
-                                    SelectionChanged="OnTouchpadFeedbackSelectionChanged">
-                                    <ComboBoxItem x:Uid="TouchpadFeedbackWeakItem" Content="Weak" Tag="1" />
-                                    <ComboBoxItem x:Uid="TouchpadFeedbackMediumItem" Content="Medium" Tag="2" />
-                                    <ComboBoxItem x:Uid="TouchpadFeedbackStrongItem" Content="Strong" Tag="3" />
-                                </ComboBox>
-                            </Grid>
+                                        <ComboBox
+                                            x:Name="TouchpadFeedbackStrengthComboBox"
+                                            Grid.Column="1"
+                                            Width="112"
+                                            HorizontalAlignment="Left"
+                                            SelectionChanged="OnTouchpadFeedbackSelectionChanged">
+                                            <ComboBoxItem x:Uid="TouchpadFeedbackWeakItem" Content="Weak" Tag="30" />
+                                            <ComboBoxItem x:Uid="TouchpadFeedbackWeakerItem" Content="Weaker" Tag="40" />
+                                            <ComboBoxItem x:Uid="TouchpadFeedbackMediumItem" Content="Medium" Tag="50" />
+                                            <ComboBoxItem x:Uid="TouchpadFeedbackStrongerItem" Content="Stronger" Tag="60" />
+                                            <ComboBoxItem x:Uid="TouchpadFeedbackStrongItem" Content="Strong" Tag="70" />
+                                        </ComboBox>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
 
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="112" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                            <Border Style="{StaticResource SubtlePanelCardStyle}" Padding="12">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="96" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
 
-                                <TextBlock
-                                    x:Uid="TouchpadDeepPressFeedbackLabelText"
-                                    VerticalAlignment="Center"
-                                    Style="{StaticResource CardBodyTextBlockStyle}"
-                                    Text="Deep press haptics" />
+                                        <TextBlock
+                                            x:Uid="TouchpadDeepPressThresholdLabelText"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource CardBodyTextBlockStyle}"
+                                            Text="Deep threshold" />
 
-                                <ComboBox
-                                    x:Name="TouchpadDeepPressFeedbackComboBox"
-                                    Grid.Column="1"
-                                    Width="108"
-                                    HorizontalAlignment="Left"
-                                    SelectionChanged="OnTouchpadDeepPressFeedbackSelectionChanged">
-                                    <ComboBoxItem x:Uid="TouchpadDeepPressFeedbackOffItem" Content="Off" Tag="false" />
-                                    <ComboBoxItem x:Uid="TouchpadDeepPressFeedbackOnItem" Content="On" Tag="true" />
-                                </ComboBox>
-                            </Grid>
+                                        <ComboBox
+                                            x:Name="TouchpadDeepPressThresholdComboBox"
+                                            Grid.Column="1"
+                                            Width="112"
+                                            HorizontalAlignment="Left"
+                                            SelectionChanged="OnTouchpadPressThresholdSelectionChanged">
+                                            <ComboBoxItem x:Uid="TouchpadLevelLightItem" Content="Light" Tag="240" />
+                                            <ComboBoxItem x:Uid="TouchpadLevelLighterItem" Content="Lighter" Tag="320" />
+                                            <ComboBoxItem x:Uid="TouchpadLevelMediumItem" Content="Medium" Tag="400" />
+                                            <ComboBoxItem x:Uid="TouchpadLevelHeavierItem" Content="Heavier" Tag="480" />
+                                            <ComboBoxItem x:Uid="TouchpadLevelHeavyItem" Content="Heavy" Tag="560" />
+                                            <ComboBoxItem x:Uid="TouchpadDeepPressNeverItem" Content="Never" Tag="never" />
+                                        </ComboBox>
+                                    </Grid>
 
-                            <Grid ColumnSpacing="8">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="112" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="96" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
 
-                                <TextBlock
-                                    x:Uid="TouchpadLongPressLabelText"
-                                    VerticalAlignment="Center"
-                                    Style="{StaticResource CardBodyTextBlockStyle}"
-                                    Text="Long press duration" />
+                                        <TextBlock
+                                            x:Uid="TouchpadDeepPressFeedbackStrengthLabelText"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource CardBodyTextBlockStyle}"
+                                            Text="Deep feedback" />
 
-                                <ComboBox
-                                    x:Name="TouchpadLongPressComboBox"
-                                    Grid.Column="1"
-                                    Width="108"
-                                    HorizontalAlignment="Left"
-                                    SelectionChanged="OnTouchpadLongPressSelectionChanged">
-                                    <ComboBoxItem x:Uid="TouchpadLongPress500Item" Content="500 ms" Tag="500" />
-                                    <ComboBoxItem x:Uid="TouchpadLongPress600Item" Content="600 ms" Tag="600" />
-                                    <ComboBoxItem x:Uid="TouchpadLongPress700Item" Content="700 ms" Tag="700" />
-                                    <ComboBoxItem x:Uid="TouchpadLongPress800Item" Content="800 ms" Tag="800" />
-                                    <ComboBoxItem x:Uid="TouchpadLongPress900Item" Content="900 ms" Tag="900" />
-                                    <ComboBoxItem x:Uid="TouchpadLongPress1000Item" Content="1000 ms" Tag="1000" />
-                                </ComboBox>
-                            </Grid>
+                                        <ComboBox
+                                            x:Name="TouchpadDeepPressFeedbackStrengthComboBox"
+                                            Grid.Column="1"
+                                            Width="112"
+                                            HorizontalAlignment="Left"
+                                            SelectionChanged="OnTouchpadFeedbackSelectionChanged">
+                                            <ComboBoxItem x:Uid="TouchpadFeedbackWeakItem" Content="Weak" Tag="60" />
+                                            <ComboBoxItem x:Uid="TouchpadFeedbackWeakerItem" Content="Weaker" Tag="70" />
+                                            <ComboBoxItem x:Uid="TouchpadFeedbackMediumItem" Content="Medium" Tag="80" />
+                                            <ComboBoxItem x:Uid="TouchpadFeedbackStrongerItem" Content="Stronger" Tag="90" />
+                                            <ComboBoxItem x:Uid="TouchpadFeedbackStrongItem" Content="Strong" Tag="100" />
+                                        </ComboBox>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Style="{StaticResource SubtlePanelCardStyle}" Padding="12">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="96" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+
+                                        <TextBlock
+                                            x:Uid="TouchpadLongPressLabelText"
+                                            VerticalAlignment="Center"
+                                            Style="{StaticResource CardBodyTextBlockStyle}"
+                                            Text="Long threshold" />
+
+                                        <ComboBox
+                                            x:Name="TouchpadLongPressComboBox"
+                                            Grid.Column="1"
+                                            Width="112"
+                                            HorizontalAlignment="Left"
+                                            SelectionChanged="OnTouchpadLongPressSelectionChanged">
+                                            <ComboBoxItem Content="500 ms" Tag="500" />
+                                            <ComboBoxItem Content="600 ms" Tag="600" />
+                                            <ComboBoxItem Content="700 ms" Tag="700" />
+                                            <ComboBoxItem Content="800 ms" Tag="800" />
+                                            <ComboBoxItem Content="900 ms" Tag="900" />
+                                            <ComboBoxItem Content="1000 ms" Tag="1000" />
+                                        </ComboBox>
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
                     </Border>
                 </Grid>

@@ -82,14 +82,11 @@ internal sealed class TouchpadInputService : NativeWindow, IDisposable
 
         lock (_sync)
         {
-            _lightPressThreshold = Math.Clamp(
+            var pressThresholds = TouchpadHardwareSettings.NormalizeAutomaticPressThresholds(
                 configuration.LightPressThreshold,
-                20,
-                RuntimeDefaults.DefaultTouchpadDeepPressThreshold - 1);
-            _deepPressThreshold = Math.Clamp(
-                configuration.DeepPressThreshold,
-                RuntimeDefaults.DefaultTouchpadDeepPressThreshold,
-                RuntimeDefaults.DefaultTouchpadDeepPressThreshold);
+                configuration.DeepPressThreshold);
+            _lightPressThreshold = pressThresholds.LightStart;
+            _deepPressThreshold = pressThresholds.DeepStart;
             _longPressDurationMs = Math.Clamp(
                 configuration.LongPressDurationMs,
                 200,

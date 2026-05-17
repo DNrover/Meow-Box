@@ -6,13 +6,21 @@ public sealed class TouchpadConfiguration
 
     public int LightPressThreshold { get; set; } = RuntimeDefaults.DefaultTouchpadLightPressThreshold;
 
+    public int LightPressReleaseThreshold { get; set; }
+
     public int PressSensitivityLevel { get; set; }
 
     public int DeepPressThreshold { get; set; } = RuntimeDefaults.DefaultTouchpadDeepPressThreshold;
 
+    public int DeepPressReleaseThreshold { get; set; }
+
     public int LongPressDurationMs { get; set; } = RuntimeDefaults.DefaultTouchpadCornerLongPressDurationMs;
 
     public int FeedbackLevel { get; set; }
+
+    public int FeedbackStrength { get; set; }
+
+    public int DeepPressFeedbackStrength { get; set; }
 
     public bool DeepPressHapticsEnabled { get; set; } = true;
 
@@ -100,6 +108,11 @@ public static class TouchpadHardwareSettings
     public const int Low = 1;
     public const int Medium = 2;
     public const int High = 3;
+    public const int MinPressThreshold = 20;
+    public const int MaxPressThreshold = 4000;
+    public const int MinPressReleaseThreshold = 0;
+    public const int MinFeedbackStrength = 0;
+    public const int MaxFeedbackStrength = 128;
 
     public static int NormalizeLevel(int level, int fallback = Medium)
     {
@@ -131,7 +144,123 @@ public static class TouchpadHardwareSettings
             .First()
             .Level;
     }
+
+    public static int MapFeedbackLevelToStrength(int level)
+    {
+        return NormalizeLevel(level) switch
+        {
+            Low => 56,
+            High => 104,
+            _ => RuntimeDefaults.DefaultTouchpadFeedbackStrength
+        };
+    }
+
+    public static int MapFeedbackLevelToDeepPressStrength(int level)
+    {
+        return NormalizeLevel(level) switch
+        {
+            Low => 80,
+            High => 128,
+            _ => RuntimeDefaults.DefaultTouchpadDeepPressFeedbackStrength
+        };
+    }
+
+    public static int MapFeedbackStrengthToLevel(int strength)
+    {
+        var candidates = new[]
+        {
+            (Level: Low, Strength: 56),
+            (Level: Medium, Strength: RuntimeDefaults.DefaultTouchpadFeedbackStrength),
+            (Level: High, Strength: 104)
+        };
+
+        return candidates
+            .OrderBy(item => Math.Abs(item.Strength - strength))
+            .ThenBy(item => item.Level)
+            .First()
+            .Level;
+    }
+
+    public static TouchpadPressThresholds NormalizePressThresholds(
+        int lightStart,
+        int lightRelease,
+        int deepStart,
+        int deepRelease)
+    {
+        var normalizedLightStart = Math.Clamp(
+            lightStart <= 0 ? RuntimeDefaults.DefaultTouchpadLightPressThreshold : lightStart,
+            MinPressThreshold,
+            MaxPressThreshold - 1);
+        var normalizedDeepStart = Math.Clamp(
+            deepStart <= 0 ? RuntimeDefaults.DefaultTouchpadDeepPressThreshold : deepStart,
+            normalizedLightStart + 1,
+            MaxPressThreshold);
+        var normalizedLightRelease = Math.Clamp(
+            lightRelease <= 0 ? CalculateDefaultLightPressReleaseThreshold(normalizedLightStart) : lightRelease,
+            MinPressReleaseThreshold,
+            normalizedLightStart);
+        var normalizedDeepRelease = Math.Clamp(
+            deepRelease <= 0 ? CalculateDefaultDeepPressReleaseThreshold(normalizedDeepStart) : deepRelease,
+            MinPressReleaseThreshold,
+            normalizedDeepStart);
+
+        return new TouchpadPressThresholds(
+            normalizedLightStart,
+            normalizedLightRelease,
+            normalizedDeepStart,
+            normalizedDeepRelease);
+    }
+
+    public static TouchpadPressThresholds NormalizeAutomaticPressThresholds(
+        int lightStart,
+        int deepStart)
+    {
+        var normalizedLightStart = Math.Clamp(
+            lightStart <= 0 ? RuntimeDefaults.DefaultTouchpadLightPressThreshold : lightStart,
+            MinPressThreshold,
+            MaxPressThreshold - 1);
+        var normalizedDeepStart = Math.Clamp(
+            deepStart <= 0 ? RuntimeDefaults.DefaultTouchpadDeepPressThreshold : deepStart,
+            normalizedLightStart + 1,
+            MaxPressThreshold);
+
+        return NormalizePressThresholds(
+            normalizedLightStart,
+            CalculateDefaultLightPressReleaseThreshold(normalizedLightStart),
+            normalizedDeepStart,
+            CalculateDefaultDeepPressReleaseThreshold(normalizedDeepStart));
+    }
+
+    public static TouchpadFeedbackStrengths NormalizeFeedbackStrengths(int normal, int deep)
+    {
+        var normalizedNormal = Math.Clamp(
+            normal <= 0 ? RuntimeDefaults.DefaultTouchpadFeedbackStrength : normal,
+            MinFeedbackStrength,
+            MaxFeedbackStrength);
+        var normalizedDeep = Math.Clamp(
+            deep <= 0 ? normalizedNormal + 24 : deep,
+            MinFeedbackStrength,
+            MaxFeedbackStrength);
+
+        return new TouchpadFeedbackStrengths(normalizedNormal, normalizedDeep);
+    }
+
+    public static int CalculateDefaultLightPressReleaseThreshold(int lightStart)
+        => Math.Clamp((int)Math.Round(lightStart * 0.33d), MinPressReleaseThreshold, Math.Max(MinPressReleaseThreshold, lightStart));
+
+    public static int CalculateDefaultDeepPressReleaseThreshold(int deepStart)
+        => Math.Clamp((int)Math.Round(deepStart * 0.8d), MinPressReleaseThreshold, Math.Max(MinPressReleaseThreshold, deepStart));
 }
+
+public readonly record struct TouchpadPressThresholds(
+    int LightStart,
+    int LightRelease,
+    int DeepStart,
+    int DeepRelease);
+
+public readonly record struct TouchpadFeedbackStrengths(
+    int Normal,
+    int DeepPress);
 
 public sealed class TouchpadLiveStateSnapshot
 {

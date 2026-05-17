@@ -5,7 +5,6 @@ using Microsoft.UI;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
-using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Shapes;
 using MeowBox.Controller.Services;
@@ -19,7 +18,6 @@ namespace MeowBox.Controller.Views;
 public sealed partial class TouchpadPage : Page
 {
     private const double PressureScaleMax = 2500d;
-    private const double DeepPressThreshold = RuntimeDefaults.DefaultTouchpadDeepPressThreshold;
     private const double RedPressureThreshold = 800d;
     private const double PreviewStrokeThickness = 1.15d;
     private const string TouchpadPawLightFill = "#C8B8A4";
@@ -33,6 +31,7 @@ public sealed partial class TouchpadPage : Page
     private bool _touchpadPreferencesLoading;
     private CancellationTokenSource? _pressSensitivityApplyCts;
     private CancellationTokenSource? _feedbackApplyCts;
+    private CancellationTokenSource? _longPressApplyCts;
     private readonly SemaphoreSlim _touchpadHardwareGate = new(1, 1);
     private readonly Dictionary<int, SmoothedContactState> _smoothedContacts = [];
 
@@ -67,6 +66,7 @@ public sealed partial class TouchpadPage : Page
         UnsubscribeTouchpadActionEditors();
         _pressSensitivityApplyCts?.Cancel();
         _feedbackApplyCts?.Cancel();
+        _longPressApplyCts?.Cancel();
     }
 
     private void OnResolvedThemeChanged(object? sender, ElementTheme e)
@@ -204,27 +204,58 @@ public sealed partial class TouchpadPage : Page
             return;
         }
 
-        Controller.ApplyTouchpadPreferences(
-            Controller.TouchpadLightPressThreshold,
-            GetSelectedIntValue(TouchpadLongPressComboBox, 700));
+        var longPressDurationMs = GetSelectedIntValue(TouchpadLongPressComboBox, Controller.TouchpadLongPressDurationMs);
+        DebounceTouchpadHardwareAction(ref _longPressApplyCts, () =>
+        {
+            Controller.ApplyTouchpadPreferences(
+                Controller.TouchpadLightPressThreshold,
+                Controller.TouchpadLightPressReleaseThreshold,
+                Controller.TouchpadDeepPressThreshold,
+                Controller.TouchpadDeepPressReleaseThreshold,
+                longPressDurationMs);
+            return Task.CompletedTask;
+        });
     }
 
-    private void OnTouchpadPressSensitivitySelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void OnTouchpadPressThresholdSelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_touchpadPreferencesLoading || Controller.IsReloadingConfiguration)
         {
             return;
         }
 
-        var level = GetSelectedHardwareLevel(TouchpadPressSensitivityComboBox);
-        if (level == Controller.TouchpadPressSensitivityLevel)
+        var deepPressEnabled = !IsSelectedNever(TouchpadDeepPressThresholdComboBox);
+        var thresholds = TouchpadHardwareSettings.NormalizeAutomaticPressThresholds(
+            GetSelectedIntValue(TouchpadLightPressThresholdComboBox, Controller.TouchpadLightPressThreshold),
+            GetSelectedIntValue(TouchpadDeepPressThresholdComboBox, Controller.TouchpadDeepPressThreshold));
+        var thresholdsChanged = thresholds.LightStart != Controller.TouchpadLightPressThreshold ||
+            thresholds.LightRelease != Controller.TouchpadLightPressReleaseThreshold ||
+            thresholds.DeepStart != Controller.TouchpadDeepPressThreshold ||
+            thresholds.DeepRelease != Controller.TouchpadDeepPressReleaseThreshold;
+        var hapticsChanged = deepPressEnabled != Controller.TouchpadDeepPressHapticsEnabled;
+        if (!thresholdsChanged && !hapticsChanged)
         {
             return;
         }
 
         DebounceTouchpadHardwareAction(ref _pressSensitivityApplyCts, async () =>
         {
-            await RunTouchpadHardwareActionAsync(() => Controller.SetTouchpadHardwarePressAsync(level));
+            await RunTouchpadHardwareActionAsync(async () =>
+            {
+                if (thresholdsChanged)
+                {
+                    await Controller.SetTouchpadHardwarePressAsync(
+                        thresholds.LightStart,
+                        thresholds.LightRelease,
+                        thresholds.DeepStart,
+                        thresholds.DeepRelease);
+                }
+
+                if (hapticsChanged)
+                {
+                    await Controller.SetTouchpadHardwareHapticAsync(deepPressEnabled);
+                }
+            });
         });
     }
 
@@ -235,41 +266,33 @@ public sealed partial class TouchpadPage : Page
             return;
         }
 
-        var level = GetSelectedHardwareLevel(TouchpadFeedbackComboBox);
-        if (level == Controller.TouchpadFeedbackLevel)
+        var strengths = TouchpadHardwareSettings.NormalizeFeedbackStrengths(
+            GetSelectedIntValue(TouchpadFeedbackStrengthComboBox, Controller.TouchpadFeedbackStrength),
+            GetSelectedIntValue(TouchpadDeepPressFeedbackStrengthComboBox, Controller.TouchpadDeepPressFeedbackStrength));
+        if (strengths.Normal == Controller.TouchpadFeedbackStrength &&
+            strengths.DeepPress == Controller.TouchpadDeepPressFeedbackStrength)
         {
             return;
         }
 
         DebounceTouchpadHardwareAction(ref _feedbackApplyCts, async () =>
         {
-            await RunTouchpadHardwareActionAsync(() => Controller.SetTouchpadHardwareVibrationAsync(level));
+            await RunTouchpadHardwareActionAsync(() => Controller.SetTouchpadHardwareVibrationAsync(
+                strengths.Normal,
+                strengths.DeepPress));
         });
-    }
-
-    private async void OnTouchpadDeepPressFeedbackSelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (_touchpadPreferencesLoading || Controller.IsReloadingConfiguration)
-        {
-            return;
-        }
-
-        var enabled = GetSelectedBooleanValue(TouchpadDeepPressFeedbackComboBox, Controller.TouchpadDeepPressHapticsEnabled);
-        if (enabled == Controller.TouchpadDeepPressHapticsEnabled)
-        {
-            return;
-        }
-
-        await RunTouchpadHardwareActionAsync(() => Controller.SetTouchpadHardwareHapticAsync(enabled));
     }
 
     private void OnControllerPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is not (nameof(MeowBoxController.Touchpad) or
                                    nameof(MeowBoxController.TouchpadLightPressThreshold) or
+                                   nameof(MeowBoxController.TouchpadLightPressReleaseThreshold) or
+                                   nameof(MeowBoxController.TouchpadDeepPressThreshold) or
+                                   nameof(MeowBoxController.TouchpadDeepPressReleaseThreshold) or
                                    nameof(MeowBoxController.TouchpadLongPressDurationMs) or
-                                   nameof(MeowBoxController.TouchpadPressSensitivityLevel) or
-                                   nameof(MeowBoxController.TouchpadFeedbackLevel) or
+                                   nameof(MeowBoxController.TouchpadFeedbackStrength) or
+                                   nameof(MeowBoxController.TouchpadDeepPressFeedbackStrength) or
                                    nameof(MeowBoxController.TouchpadDeepPressHapticsEnabled) or
                                    nameof(MeowBoxController.ShowEasterEggs)))
         {
@@ -297,54 +320,32 @@ public sealed partial class TouchpadPage : Page
     private void SyncTouchpadPreferenceControls()
     {
         _touchpadPreferencesLoading = true;
-        SetSelectedHardwareLevel(TouchpadPressSensitivityComboBox, Controller.TouchpadPressSensitivityLevel);
-        SetSelectedHardwareLevel(TouchpadFeedbackComboBox, Controller.TouchpadFeedbackLevel);
+        SetSelectedIntValue(TouchpadLightPressThresholdComboBox, Controller.TouchpadLightPressThreshold);
+        if (Controller.TouchpadDeepPressHapticsEnabled)
+        {
+            SetSelectedIntValue(TouchpadDeepPressThresholdComboBox, Controller.TouchpadDeepPressThreshold);
+        }
+        else
+        {
+            SetSelectedNever(TouchpadDeepPressThresholdComboBox);
+        }
+
+        SetSelectedIntValue(TouchpadFeedbackStrengthComboBox, Controller.TouchpadFeedbackStrength);
+        SetSelectedIntValue(TouchpadDeepPressFeedbackStrengthComboBox, Controller.TouchpadDeepPressFeedbackStrength);
         SetSelectedIntValue(TouchpadLongPressComboBox, Controller.TouchpadLongPressDurationMs);
-        SetSelectedBooleanValue(TouchpadDeepPressFeedbackComboBox, Controller.TouchpadDeepPressHapticsEnabled);
         _touchpadPreferencesLoading = false;
     }
 
-    private static int GetSelectedHardwareLevel(ComboBox comboBox)
+    private static bool IsSelectedNever(ComboBox comboBox)
     {
-        if (comboBox.SelectedItem is ComboBoxItem item &&
-            int.TryParse(item.Tag?.ToString(), out var level))
-        {
-            return TouchpadHardwareSettings.NormalizeLevel(level);
-        }
-
-        return 1;
-    }
-
-    private static void SetSelectedHardwareLevel(ComboBox comboBox, int level)
-    {
-        level = TouchpadHardwareSettings.NormalizeLevel(level);
-        foreach (var item in comboBox.Items.OfType<ComboBoxItem>())
-        {
-            if (string.Equals(item.Tag?.ToString(), level.ToString(System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal))
-            {
-                comboBox.SelectedItem = item;
-                return;
-            }
-        }
-
-        comboBox.SelectedIndex = Math.Clamp(level - 1, 0, Math.Max(0, comboBox.Items.Count - 1));
+        return comboBox.SelectedItem is ComboBoxItem item &&
+            string.Equals(item.Tag?.ToString(), "never", StringComparison.OrdinalIgnoreCase);
     }
 
     private static int GetSelectedIntValue(ComboBox comboBox, int fallback)
     {
         if (comboBox.SelectedItem is ComboBoxItem item &&
             int.TryParse(item.Tag?.ToString(), out var value))
-        {
-            return value;
-        }
-
-        return fallback;
-    }
-
-    private static bool GetSelectedBooleanValue(ComboBox comboBox, bool fallback)
-    {
-        if (comboBox.SelectedItem is ComboBoxItem item &&
-            bool.TryParse(item.Tag?.ToString(), out var value))
         {
             return value;
         }
@@ -378,18 +379,16 @@ public sealed partial class TouchpadPage : Page
         }
     }
 
-    private static void SetSelectedBooleanValue(ComboBox comboBox, bool value)
+    private static void SetSelectedNever(ComboBox comboBox)
     {
         foreach (var item in comboBox.Items.OfType<ComboBoxItem>())
         {
-            if (bool.TryParse(item.Tag?.ToString(), out var itemValue) && itemValue == value)
+            if (string.Equals(item.Tag?.ToString(), "never", StringComparison.OrdinalIgnoreCase))
             {
                 comboBox.SelectedItem = item;
                 return;
             }
         }
-
-        comboBox.SelectedIndex = value ? 1 : 0;
     }
 
     private void DebounceTouchpadHardwareAction(ref CancellationTokenSource? cts, Func<Task> action)
@@ -420,7 +419,6 @@ public sealed partial class TouchpadPage : Page
         await _touchpadHardwareGate.WaitAsync();
         try
         {
-            TouchpadHardwareControlPanel.IsHitTestVisible = false;
             await action();
         }
         catch (Exception exception)
@@ -430,7 +428,6 @@ public sealed partial class TouchpadPage : Page
         }
         finally
         {
-            TouchpadHardwareControlPanel.IsHitTestVisible = true;
             _touchpadHardwareGate.Release();
         }
     }
@@ -885,7 +882,14 @@ public sealed partial class TouchpadPage : Page
     private Windows.UI.Color GetPressureColor(double pressure, TouchpadVisualizerPalette palette)
     {
         pressure = Math.Clamp(pressure, 0d, PressureScaleMax);
-        var lightPressThreshold = Math.Clamp(Controller.Touchpad.LightPressThreshold, 20, RuntimeDefaults.DefaultTouchpadDeepPressThreshold - 1);
+        var thresholds = TouchpadHardwareSettings.NormalizePressThresholds(
+            Controller.Touchpad.LightPressThreshold,
+            Controller.Touchpad.LightPressReleaseThreshold,
+            Controller.Touchpad.DeepPressThreshold,
+            Controller.Touchpad.DeepPressReleaseThreshold);
+        var lightPressThreshold = thresholds.LightStart;
+        var deepPressThreshold = thresholds.DeepStart;
+        var redPressureThreshold = Math.Max(RedPressureThreshold, deepPressThreshold + 300d);
 
         if (pressure <= 0d)
         {
@@ -897,20 +901,20 @@ public sealed partial class TouchpadPage : Page
             return LerpColor(palette.ContactInactive, palette.PressureLight, pressure / lightPressThreshold);
         }
 
-        if (pressure <= DeepPressThreshold)
+        if (pressure <= deepPressThreshold)
         {
             return LerpColor(
                 palette.PressureLight,
                 palette.PressureMedium,
-                (pressure - lightPressThreshold) / (DeepPressThreshold - lightPressThreshold));
+                (pressure - lightPressThreshold) / (deepPressThreshold - lightPressThreshold));
         }
 
-        if (pressure <= RedPressureThreshold)
+        if (pressure <= redPressureThreshold)
         {
             return LerpColor(
                 palette.PressureMedium,
                 palette.PressureHigh,
-                (pressure - DeepPressThreshold) / (RedPressureThreshold - DeepPressThreshold));
+                (pressure - deepPressThreshold) / (redPressureThreshold - deepPressThreshold));
         }
 
         return palette.PressureHigh;

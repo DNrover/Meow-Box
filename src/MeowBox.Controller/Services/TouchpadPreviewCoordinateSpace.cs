@@ -9,7 +9,6 @@ namespace MeowBox.Controller.Services;
 internal sealed class TouchpadPreviewCoordinateSpace
 {
     public const double ContactVisualInset = 12d;
-    public static readonly double CornerOverlayRadiusCompensation = ContactVisualInset * Math.Sqrt(2d);
     private const double CornerOverlayVisualInset = 0.5d;
     private const double EdgeOverlayWidthRatio = 0.06d;
 
@@ -352,8 +351,8 @@ internal sealed class TouchpadPreviewCoordinateSpace
     private TouchpadPreviewCornerShape GetCornerOverlayShape(string regionId, TouchpadRegionBoundsConfiguration bounds)
     {
         var region = TouchpadCornerRegionMath.Describe(regionId, bounds);
-        var radiusX = ScaleToPadWidth(region.RadiusX) + CornerOverlayRadiusCompensation;
-        var radiusY = ScaleToPadHeight(region.RadiusY) + CornerOverlayRadiusCompensation;
+        var radiusX = ScaleToPadWidth(region.RadiusX);
+        var radiusY = ScaleToPadHeight(region.RadiusY);
         var originX = region.IsRightTop
             ? (PadLeft + PadWidth) - CornerOverlayVisualInset
             : PadLeft + CornerOverlayVisualInset;

@@ -195,7 +195,10 @@ internal sealed class TouchpadEdgeSlideService : IDisposable
             }
 
             var touchpad = _getTouchpadConfiguration();
-            TouchpadPrivateHidService.SetVibration(TouchpadHardwareSettings.NormalizeLevel(touchpad.FeedbackLevel));
+            var strengths = TouchpadHardwareSettings.NormalizeFeedbackStrengths(
+                touchpad.FeedbackStrength,
+                touchpad.DeepPressFeedbackStrength);
+            TouchpadPrivateHidService.SetVibration(strengths.Normal, strengths.DeepPress);
             TouchpadPrivateHidService.SetHaptic(true);
             _edgeSlideHapticsPrimed = true;
         }

@@ -281,7 +281,11 @@ public static class RuntimeDefaults
     public const int DefaultOsdBackgroundOpacityPercent = 20;
     public const int DefaultOsdScalePercent = 75;
     public const int DefaultTouchpadLightPressThreshold = 125;
+    public const int DefaultTouchpadLightPressReleaseThreshold = 41;
     public const int DefaultTouchpadDeepPressThreshold = 500;
+    public const int DefaultTouchpadDeepPressReleaseThreshold = 400;
+    public const int DefaultTouchpadFeedbackStrength = 80;
+    public const int DefaultTouchpadDeepPressFeedbackStrength = 104;
     public const int DefaultTouchpadSurfaceWidth = 3282;
     public const int DefaultTouchpadSurfaceHeight = 2124;
     public const int DefaultTouchpadCornerWidth = 400;
