@@ -409,7 +409,16 @@
     <value>充电上限</value>
   </data>
   <data name="TouchpadPressSensitivityLabelText.Text" xml:space="preserve">
-    <value>触控灵敏度</value>
+    <value>轻按阈值</value>
+  </data>
+  <data name="TouchpadPressReleaseThresholdLabelText.Text" xml:space="preserve">
+    <value>轻按释放阈值（自动）</value>
+  </data>
+  <data name="TouchpadDeepPressThresholdLabelText.Text" xml:space="preserve">
+    <value>重按阈值</value>
+  </data>
+  <data name="TouchpadDeepPressReleaseThresholdLabelText.Text" xml:space="preserve">
+    <value>重按释放阈值（自动）</value>
   </data>
   <data name="TouchpadPressSensitivityLowItem.Content" xml:space="preserve">
     <value>低</value>
@@ -421,7 +430,10 @@
     <value>高</value>
   </data>
   <data name="TouchpadFeedbackLabelText.Text" xml:space="preserve">
-    <value>震动反馈度</value>
+    <value>轻按反馈</value>
+  </data>
+  <data name="TouchpadDeepPressFeedbackStrengthLabelText.Text" xml:space="preserve">
+    <value>重按反馈</value>
   </data>
   <data name="TouchpadFeedbackWeakItem.Content" xml:space="preserve">
     <value>弱</value>
@@ -442,7 +454,7 @@
     <value>开启</value>
   </data>
   <data name="TouchpadLongPressLabelText.Text" xml:space="preserve">
-    <value>长按触发时长</value>
+    <value>长按阈值</value>
   </data>
   <data name="StandardKeyGroup.Navigation" xml:space="preserve">
     <value>导航</value>
@@ -1202,5 +1214,38 @@
   </data>
   <data name="ProjectLinkLabelRun.Text" xml:space="preserve">
     <value>项目链接：</value>
+  </data>
+  <data name="TouchpadLightPressSettingsTitleText.Text" xml:space="preserve">
+    <value>轻按</value>
+  </data>
+  <data name="TouchpadDeepPressSettingsTitleText.Text" xml:space="preserve">
+    <value>重按</value>
+  </data>
+  <data name="TouchpadLongPressSettingsTitleText.Text" xml:space="preserve">
+    <value>长按</value>
+  </data>
+  <data name="TouchpadLevelLightItem.Content" xml:space="preserve">
+    <value>轻</value>
+  </data>
+  <data name="TouchpadLevelLighterItem.Content" xml:space="preserve">
+    <value>较轻</value>
+  </data>
+  <data name="TouchpadLevelMediumItem.Content" xml:space="preserve">
+    <value>中</value>
+  </data>
+  <data name="TouchpadLevelHeavierItem.Content" xml:space="preserve">
+    <value>较重</value>
+  </data>
+  <data name="TouchpadLevelHeavyItem.Content" xml:space="preserve">
+    <value>重</value>
+  </data>
+  <data name="TouchpadDeepPressNeverItem.Content" xml:space="preserve">
+    <value>永不</value>
+  </data>
+  <data name="TouchpadFeedbackWeakerItem.Content" xml:space="preserve">
+    <value>较弱</value>
+  </data>
+  <data name="TouchpadFeedbackStrongerItem.Content" xml:space="preserve">
+    <value>较强</value>
   </data>
 </root>

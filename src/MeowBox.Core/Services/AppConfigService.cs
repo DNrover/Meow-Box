@@ -335,12 +335,21 @@ public sealed class AppConfigService
         touchpad ??= new TouchpadConfiguration();
         var surfaceWidth = RuntimeDefaults.DefaultTouchpadSurfaceWidth;
         var surfaceHeight = RuntimeDefaults.DefaultTouchpadSurfaceHeight;
-        var pressSensitivityLevel = touchpad.PressSensitivityLevel is >= TouchpadHardwareSettings.Low and <= TouchpadHardwareSettings.High
-            ? touchpad.PressSensitivityLevel
-            : TouchpadHardwareSettings.MapThresholdToPressSensitivityLevel(
-                touchpad.LightPressThreshold <= 0
-                    ? RuntimeDefaults.DefaultTouchpadLightPressThreshold
-                    : touchpad.LightPressThreshold);
+        var lightPressThreshold = touchpad.LightPressThreshold > 0
+            ? touchpad.LightPressThreshold
+            : TouchpadHardwareSettings.MapPressSensitivityLevelToThreshold(touchpad.PressSensitivityLevel);
+        var pressThresholds = TouchpadHardwareSettings.NormalizeAutomaticPressThresholds(
+            lightPressThreshold,
+            touchpad.DeepPressThreshold);
+        var feedbackStrength = touchpad.FeedbackStrength > 0
+            ? touchpad.FeedbackStrength
+            : TouchpadHardwareSettings.MapFeedbackLevelToStrength(touchpad.FeedbackLevel);
+        var deepPressFeedbackStrength = touchpad.DeepPressFeedbackStrength > 0
+            ? touchpad.DeepPressFeedbackStrength
+            : TouchpadHardwareSettings.MapFeedbackLevelToDeepPressStrength(touchpad.FeedbackLevel);
+        var feedbackStrengths = TouchpadHardwareSettings.NormalizeFeedbackStrengths(
+            feedbackStrength,
+            deepPressFeedbackStrength);
         var leftEdgeSlideAction = NormalizeAction(touchpad.LeftEdgeSlideAction);
         var rightEdgeSlideAction = NormalizeAction(touchpad.RightEdgeSlideAction);
         if (!HasAssignedAction(leftEdgeSlideAction) &&
@@ -362,17 +371,18 @@ public sealed class AppConfigService
         return new TouchpadConfiguration
         {
             Enabled = touchpad.Enabled,
-            LightPressThreshold = TouchpadHardwareSettings.MapPressSensitivityLevelToThreshold(pressSensitivityLevel),
-            PressSensitivityLevel = pressSensitivityLevel,
-            DeepPressThreshold = Math.Clamp(
-                RuntimeDefaults.DefaultTouchpadDeepPressThreshold,
-                RuntimeDefaults.DefaultTouchpadDeepPressThreshold,
-                RuntimeDefaults.DefaultTouchpadDeepPressThreshold),
+            LightPressThreshold = pressThresholds.LightStart,
+            LightPressReleaseThreshold = pressThresholds.LightRelease,
+            PressSensitivityLevel = TouchpadHardwareSettings.MapThresholdToPressSensitivityLevel(pressThresholds.LightStart),
+            DeepPressThreshold = pressThresholds.DeepStart,
+            DeepPressReleaseThreshold = pressThresholds.DeepRelease,
             LongPressDurationMs = Math.Clamp(
                 touchpad.LongPressDurationMs <= 0 ? RuntimeDefaults.DefaultTouchpadCornerLongPressDurationMs : touchpad.LongPressDurationMs,
                 200,
                 3000),
-            FeedbackLevel = TouchpadHardwareSettings.NormalizeLevel(touchpad.FeedbackLevel),
+            FeedbackLevel = TouchpadHardwareSettings.MapFeedbackStrengthToLevel(feedbackStrengths.Normal),
+            FeedbackStrength = feedbackStrengths.Normal,
+            DeepPressFeedbackStrength = feedbackStrengths.DeepPress,
             DeepPressHapticsEnabled = touchpad.DeepPressHapticsEnabled,
             EdgeSlideEnabled = edgeSlideEnabled,
             SurfaceWidth = surfaceWidth,

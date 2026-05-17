@@ -409,7 +409,16 @@
     <value>Charge limit</value>
   </data>
   <data name="TouchpadPressSensitivityLabelText.Text" xml:space="preserve">
-    <value>Press sensitivity</value>
+    <value>Light threshold</value>
+  </data>
+  <data name="TouchpadPressReleaseThresholdLabelText.Text" xml:space="preserve">
+    <value>Press release (auto)</value>
+  </data>
+  <data name="TouchpadDeepPressThresholdLabelText.Text" xml:space="preserve">
+    <value>Deep threshold</value>
+  </data>
+  <data name="TouchpadDeepPressReleaseThresholdLabelText.Text" xml:space="preserve">
+    <value>Deep press release (auto)</value>
   </data>
   <data name="TouchpadPressSensitivityLowItem.Content" xml:space="preserve">
     <value>Low</value>
@@ -421,7 +430,10 @@
     <value>High</value>
   </data>
   <data name="TouchpadFeedbackLabelText.Text" xml:space="preserve">
-    <value>Vibration strength</value>
+    <value>Light feedback</value>
+  </data>
+  <data name="TouchpadDeepPressFeedbackStrengthLabelText.Text" xml:space="preserve">
+    <value>Deep feedback</value>
   </data>
   <data name="TouchpadFeedbackWeakItem.Content" xml:space="preserve">
     <value>Weak</value>
@@ -442,7 +454,7 @@
     <value>On</value>
   </data>
   <data name="TouchpadLongPressLabelText.Text" xml:space="preserve">
-    <value>Long press duration</value>
+    <value>Long threshold</value>
   </data>
   <data name="StandardKeyGroup.Navigation" xml:space="preserve">
     <value>Navigation</value>
@@ -1202,5 +1214,38 @@
   </data>
   <data name="ProjectLinkLabelRun.Text" xml:space="preserve">
     <value>Project link: </value>
+  </data>
+  <data name="TouchpadLightPressSettingsTitleText.Text" xml:space="preserve">
+    <value>Light press</value>
+  </data>
+  <data name="TouchpadDeepPressSettingsTitleText.Text" xml:space="preserve">
+    <value>Deep press</value>
+  </data>
+  <data name="TouchpadLongPressSettingsTitleText.Text" xml:space="preserve">
+    <value>Long press</value>
+  </data>
+  <data name="TouchpadLevelLightItem.Content" xml:space="preserve">
+    <value>Light</value>
+  </data>
+  <data name="TouchpadLevelLighterItem.Content" xml:space="preserve">
+    <value>Lighter</value>
+  </data>
+  <data name="TouchpadLevelMediumItem.Content" xml:space="preserve">
+    <value>Medium</value>
+  </data>
+  <data name="TouchpadLevelHeavierItem.Content" xml:space="preserve">
+    <value>Heavier</value>
+  </data>
+  <data name="TouchpadLevelHeavyItem.Content" xml:space="preserve">
+    <value>Heavy</value>
+  </data>
+  <data name="TouchpadDeepPressNeverItem.Content" xml:space="preserve">
+    <value>Never</value>
+  </data>
+  <data name="TouchpadFeedbackWeakerItem.Content" xml:space="preserve">
+    <value>Weaker</value>
+  </data>
+  <data name="TouchpadFeedbackStrongerItem.Content" xml:space="preserve">
+    <value>Stronger</value>
   </data>
 </root>

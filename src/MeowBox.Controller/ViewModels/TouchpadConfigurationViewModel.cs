@@ -7,10 +7,14 @@ public sealed class TouchpadConfigurationViewModel : ObservableObject
 {
     private bool _enabled;
     private int _lightPressThreshold;
+    private int _lightPressReleaseThreshold;
     private int _deepPressThreshold;
+    private int _deepPressReleaseThreshold;
     private int _longPressDurationMs;
     private int _pressSensitivityLevel;
     private int _feedbackLevel;
+    private int _feedbackStrength;
+    private int _deepPressFeedbackStrength;
     private bool _deepPressHapticsEnabled;
     private TouchpadTriggerActionEditorViewModel? _selectedActionEditor;
 
@@ -18,20 +22,27 @@ public sealed class TouchpadConfigurationViewModel : ObservableObject
     {
         model ??= new TouchpadConfiguration();
         _enabled = model.Enabled;
-        _lightPressThreshold = model.LightPressThreshold <= 0
-            ? RuntimeDefaults.DefaultTouchpadLightPressThreshold
-            : model.LightPressThreshold;
-        _deepPressThreshold = model.DeepPressThreshold <= 0
-            ? RuntimeDefaults.DefaultTouchpadDeepPressThreshold
-            : model.DeepPressThreshold;
+        var pressThresholds = TouchpadHardwareSettings.NormalizeAutomaticPressThresholds(
+            model.LightPressThreshold,
+            model.DeepPressThreshold);
+        _lightPressThreshold = pressThresholds.LightStart;
+        _lightPressReleaseThreshold = pressThresholds.LightRelease;
+        _deepPressThreshold = pressThresholds.DeepStart;
+        _deepPressReleaseThreshold = pressThresholds.DeepRelease;
         _longPressDurationMs = model.LongPressDurationMs <= 0
             ? RuntimeDefaults.DefaultTouchpadCornerLongPressDurationMs
             : model.LongPressDurationMs;
-        _pressSensitivityLevel = TouchpadHardwareSettings.NormalizeLevel(
-            model.PressSensitivityLevel,
-            TouchpadHardwareSettings.MapThresholdToPressSensitivityLevel(_lightPressThreshold));
-        _lightPressThreshold = TouchpadHardwareSettings.MapPressSensitivityLevelToThreshold(_pressSensitivityLevel);
-        _feedbackLevel = TouchpadHardwareSettings.NormalizeLevel(model.FeedbackLevel);
+        _pressSensitivityLevel = TouchpadHardwareSettings.MapThresholdToPressSensitivityLevel(_lightPressThreshold);
+        var feedbackStrengths = TouchpadHardwareSettings.NormalizeFeedbackStrengths(
+            model.FeedbackStrength > 0
+                ? model.FeedbackStrength
+                : TouchpadHardwareSettings.MapFeedbackLevelToStrength(model.FeedbackLevel),
+            model.DeepPressFeedbackStrength > 0
+                ? model.DeepPressFeedbackStrength
+                : TouchpadHardwareSettings.MapFeedbackLevelToDeepPressStrength(model.FeedbackLevel));
+        _feedbackStrength = feedbackStrengths.Normal;
+        _deepPressFeedbackStrength = feedbackStrengths.DeepPress;
+        _feedbackLevel = TouchpadHardwareSettings.MapFeedbackStrengthToLevel(_feedbackStrength);
         _deepPressHapticsEnabled = model.DeepPressHapticsEnabled;
 
         SurfaceWidth = model.SurfaceWidth > 0
@@ -118,13 +129,53 @@ public sealed class TouchpadConfigurationViewModel : ObservableObject
     public int DeepPressThreshold
     {
         get => _deepPressThreshold;
-        set => SetProperty(ref _deepPressThreshold, Math.Clamp(value, 100, 4000));
+        set
+        {
+            var thresholds = TouchpadHardwareSettings.NormalizeAutomaticPressThresholds(
+                LightPressThreshold,
+                value);
+            if (SetProperty(ref _deepPressThreshold, thresholds.DeepStart))
+            {
+                DeepPressReleaseThreshold = thresholds.DeepRelease;
+            }
+        }
+    }
+
+    public int DeepPressReleaseThreshold
+    {
+        get => _deepPressReleaseThreshold;
+        set => SetProperty(ref _deepPressReleaseThreshold, TouchpadHardwareSettings.NormalizePressThresholds(
+            LightPressThreshold,
+            LightPressReleaseThreshold,
+            DeepPressThreshold,
+            value).DeepRelease);
     }
 
     public int LightPressThreshold
     {
         get => _lightPressThreshold;
-        set => SetProperty(ref _lightPressThreshold, Math.Clamp(value, 20, RuntimeDefaults.DefaultTouchpadDeepPressThreshold - 1));
+        set
+        {
+            var thresholds = TouchpadHardwareSettings.NormalizeAutomaticPressThresholds(
+                value,
+                DeepPressThreshold);
+            if (SetProperty(ref _lightPressThreshold, thresholds.LightStart))
+            {
+                LightPressReleaseThreshold = thresholds.LightRelease;
+                _pressSensitivityLevel = TouchpadHardwareSettings.MapThresholdToPressSensitivityLevel(thresholds.LightStart);
+                OnPropertyChanged(nameof(PressSensitivityLevel));
+            }
+        }
+    }
+
+    public int LightPressReleaseThreshold
+    {
+        get => _lightPressReleaseThreshold;
+        set => SetProperty(ref _lightPressReleaseThreshold, TouchpadHardwareSettings.NormalizePressThresholds(
+            LightPressThreshold,
+            value,
+            DeepPressThreshold,
+            DeepPressReleaseThreshold).LightRelease);
     }
 
     public int LongPressDurationMs
@@ -142,6 +193,7 @@ public sealed class TouchpadConfigurationViewModel : ObservableObject
             if (SetProperty(ref _pressSensitivityLevel, normalized))
             {
                 LightPressThreshold = TouchpadHardwareSettings.MapPressSensitivityLevelToThreshold(normalized);
+                LightPressReleaseThreshold = TouchpadHardwareSettings.CalculateDefaultLightPressReleaseThreshold(LightPressThreshold);
             }
         }
     }
@@ -149,7 +201,37 @@ public sealed class TouchpadConfigurationViewModel : ObservableObject
     public int FeedbackLevel
     {
         get => _feedbackLevel;
-        set => SetProperty(ref _feedbackLevel, TouchpadHardwareSettings.NormalizeLevel(value));
+        set
+        {
+            var normalized = TouchpadHardwareSettings.NormalizeLevel(value);
+            if (SetProperty(ref _feedbackLevel, normalized))
+            {
+                FeedbackStrength = TouchpadHardwareSettings.MapFeedbackLevelToStrength(normalized);
+                DeepPressFeedbackStrength = TouchpadHardwareSettings.MapFeedbackLevelToDeepPressStrength(normalized);
+            }
+        }
+    }
+
+    public int FeedbackStrength
+    {
+        get => _feedbackStrength;
+        set
+        {
+            var strengths = TouchpadHardwareSettings.NormalizeFeedbackStrengths(value, DeepPressFeedbackStrength);
+            if (SetProperty(ref _feedbackStrength, strengths.Normal))
+            {
+                _feedbackLevel = TouchpadHardwareSettings.MapFeedbackStrengthToLevel(strengths.Normal);
+                OnPropertyChanged(nameof(FeedbackLevel));
+            }
+        }
+    }
+
+    public int DeepPressFeedbackStrength
+    {
+        get => _deepPressFeedbackStrength;
+        set => SetProperty(ref _deepPressFeedbackStrength, TouchpadHardwareSettings.NormalizeFeedbackStrengths(
+            FeedbackStrength,
+            value).DeepPress);
     }
 
     public bool DeepPressHapticsEnabled
@@ -199,11 +281,15 @@ public sealed class TouchpadConfigurationViewModel : ObservableObject
         return new TouchpadConfiguration
         {
             Enabled = HasAnyAssignedAction,
-            LightPressThreshold = TouchpadHardwareSettings.MapPressSensitivityLevelToThreshold(PressSensitivityLevel),
-            PressSensitivityLevel = PressSensitivityLevel,
-            DeepPressThreshold = RuntimeDefaults.DefaultTouchpadDeepPressThreshold,
+            LightPressThreshold = LightPressThreshold,
+            LightPressReleaseThreshold = LightPressReleaseThreshold,
+            PressSensitivityLevel = TouchpadHardwareSettings.MapThresholdToPressSensitivityLevel(LightPressThreshold),
+            DeepPressThreshold = DeepPressThreshold,
+            DeepPressReleaseThreshold = DeepPressReleaseThreshold,
             LongPressDurationMs = LongPressDurationMs,
-            FeedbackLevel = FeedbackLevel,
+            FeedbackLevel = TouchpadHardwareSettings.MapFeedbackStrengthToLevel(FeedbackStrength),
+            FeedbackStrength = FeedbackStrength,
+            DeepPressFeedbackStrength = DeepPressFeedbackStrength,
             DeepPressHapticsEnabled = DeepPressHapticsEnabled,
             EdgeSlideEnabled = EdgeSlideEnabled,
             SurfaceWidth = SurfaceWidth,

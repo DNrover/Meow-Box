@@ -49,9 +49,12 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
     private int _osdBackgroundOpacityPercent = RuntimeDefaults.DefaultOsdBackgroundOpacityPercent;
     private int _osdScalePercent = RuntimeDefaults.DefaultOsdScalePercent;
     private int _touchpadLightPressThreshold = RuntimeDefaults.DefaultTouchpadLightPressThreshold;
+    private int _touchpadLightPressReleaseThreshold = RuntimeDefaults.DefaultTouchpadLightPressReleaseThreshold;
+    private int _touchpadDeepPressThreshold = RuntimeDefaults.DefaultTouchpadDeepPressThreshold;
+    private int _touchpadDeepPressReleaseThreshold = RuntimeDefaults.DefaultTouchpadDeepPressReleaseThreshold;
     private int _touchpadLongPressDurationMs = RuntimeDefaults.DefaultTouchpadCornerLongPressDurationMs;
-    private int _touchpadPressSensitivityLevel = TouchpadHardwareSettings.Medium;
-    private int _touchpadFeedbackLevel = TouchpadHardwareSettings.Medium;
+    private int _touchpadFeedbackStrength = RuntimeDefaults.DefaultTouchpadFeedbackStrength;
+    private int _touchpadDeepPressFeedbackStrength = RuntimeDefaults.DefaultTouchpadDeepPressFeedbackStrength;
     private bool _touchpadDeepPressHapticsEnabled = true;
     private bool _touchpadEdgeSlideEnabled;
 
@@ -314,16 +317,34 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
         private set => SetProperty(ref _touchpadLightPressThreshold, value);
     }
 
-    public int TouchpadPressSensitivityLevel
+    public int TouchpadLightPressReleaseThreshold
     {
-        get => _touchpadPressSensitivityLevel;
-        private set => SetProperty(ref _touchpadPressSensitivityLevel, value);
+        get => _touchpadLightPressReleaseThreshold;
+        private set => SetProperty(ref _touchpadLightPressReleaseThreshold, value);
     }
 
-    public int TouchpadFeedbackLevel
+    public int TouchpadDeepPressThreshold
     {
-        get => _touchpadFeedbackLevel;
-        private set => SetProperty(ref _touchpadFeedbackLevel, value);
+        get => _touchpadDeepPressThreshold;
+        private set => SetProperty(ref _touchpadDeepPressThreshold, value);
+    }
+
+    public int TouchpadDeepPressReleaseThreshold
+    {
+        get => _touchpadDeepPressReleaseThreshold;
+        private set => SetProperty(ref _touchpadDeepPressReleaseThreshold, value);
+    }
+
+    public int TouchpadFeedbackStrength
+    {
+        get => _touchpadFeedbackStrength;
+        private set => SetProperty(ref _touchpadFeedbackStrength, value);
+    }
+
+    public int TouchpadDeepPressFeedbackStrength
+    {
+        get => _touchpadDeepPressFeedbackStrength;
+        private set => SetProperty(ref _touchpadDeepPressFeedbackStrength, value);
     }
 
     public bool TouchpadDeepPressHapticsEnabled
@@ -751,18 +772,31 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
         _ = ReloadWorkerAsync();
     }
 
-    public void ApplyTouchpadPreferences(int lightPressThreshold, int longPressDurationMs)
+    public void ApplyTouchpadPreferences(
+        int lightPressThreshold,
+        int lightPressReleaseThreshold,
+        int deepPressThreshold,
+        int deepPressReleaseThreshold,
+        int longPressDurationMs)
     {
-        var normalizedLightPressThreshold = Math.Clamp(lightPressThreshold, 20, RuntimeDefaults.DefaultTouchpadDeepPressThreshold - 1);
+        var thresholds = TouchpadHardwareSettings.NormalizeAutomaticPressThresholds(
+            lightPressThreshold,
+            deepPressThreshold);
         var normalizedValue = Math.Clamp(longPressDurationMs, 200, 3000);
-        var normalizedPressSensitivityLevel = TouchpadHardwareSettings.MapThresholdToPressSensitivityLevel(normalizedLightPressThreshold);
-        _configuration.Touchpad.LightPressThreshold = normalizedLightPressThreshold;
-        _configuration.Touchpad.PressSensitivityLevel = normalizedPressSensitivityLevel;
+        _configuration.Touchpad.LightPressThreshold = thresholds.LightStart;
+        _configuration.Touchpad.LightPressReleaseThreshold = thresholds.LightRelease;
+        _configuration.Touchpad.PressSensitivityLevel = TouchpadHardwareSettings.MapThresholdToPressSensitivityLevel(thresholds.LightStart);
+        _configuration.Touchpad.DeepPressThreshold = thresholds.DeepStart;
+        _configuration.Touchpad.DeepPressReleaseThreshold = thresholds.DeepRelease;
         _configuration.Touchpad.LongPressDurationMs = normalizedValue;
-        Touchpad.LightPressThreshold = normalizedLightPressThreshold;
-        Touchpad.PressSensitivityLevel = normalizedPressSensitivityLevel;
-        TouchpadLightPressThreshold = normalizedLightPressThreshold;
-        TouchpadPressSensitivityLevel = normalizedPressSensitivityLevel;
+        Touchpad.LightPressThreshold = thresholds.LightStart;
+        Touchpad.LightPressReleaseThreshold = thresholds.LightRelease;
+        Touchpad.DeepPressThreshold = thresholds.DeepStart;
+        Touchpad.DeepPressReleaseThreshold = thresholds.DeepRelease;
+        TouchpadLightPressThreshold = thresholds.LightStart;
+        TouchpadLightPressReleaseThreshold = thresholds.LightRelease;
+        TouchpadDeepPressThreshold = thresholds.DeepStart;
+        TouchpadDeepPressReleaseThreshold = thresholds.DeepRelease;
         Touchpad.LongPressDurationMs = normalizedValue;
         TouchpadLongPressDurationMs = normalizedValue;
         SaveConfiguration();
@@ -781,33 +815,55 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
             });
     }
 
-    public async Task SetTouchpadHardwareVibrationAsync(int mode)
+    public async Task SetTouchpadHardwareVibrationAsync(int normalStrength, int deepPressStrength)
     {
-        var normalizedMode = TouchpadHardwareSettings.NormalizeLevel(mode);
+        var strengths = TouchpadHardwareSettings.NormalizeFeedbackStrengths(normalStrength, deepPressStrength);
         await ApplyTouchpadHardwareSettingAsync(
-            () => TouchpadPrivateHidService.SetVibration(normalizedMode),
+            () => TouchpadPrivateHidService.SetVibration(strengths.Normal, strengths.DeepPress),
             () =>
             {
-                _configuration.Touchpad.FeedbackLevel = normalizedMode;
-                Touchpad.FeedbackLevel = normalizedMode;
-                TouchpadFeedbackLevel = normalizedMode;
+                _configuration.Touchpad.FeedbackLevel = TouchpadHardwareSettings.MapFeedbackStrengthToLevel(strengths.Normal);
+                _configuration.Touchpad.FeedbackStrength = strengths.Normal;
+                _configuration.Touchpad.DeepPressFeedbackStrength = strengths.DeepPress;
+                Touchpad.FeedbackLevel = _configuration.Touchpad.FeedbackLevel;
+                Touchpad.FeedbackStrength = strengths.Normal;
+                Touchpad.DeepPressFeedbackStrength = strengths.DeepPress;
+                TouchpadFeedbackStrength = strengths.Normal;
+                TouchpadDeepPressFeedbackStrength = strengths.DeepPress;
             });
     }
 
-    public async Task SetTouchpadHardwarePressAsync(int mode)
+    public async Task SetTouchpadHardwarePressAsync(
+        int lightPressThreshold,
+        int lightPressReleaseThreshold,
+        int deepPressThreshold,
+        int deepPressReleaseThreshold)
     {
-        var normalizedMode = TouchpadHardwareSettings.NormalizeLevel(mode);
-        var threshold = TouchpadHardwareSettings.MapPressSensitivityLevelToThreshold(normalizedMode);
+        var thresholds = TouchpadHardwareSettings.NormalizeAutomaticPressThresholds(
+            lightPressThreshold,
+            deepPressThreshold);
         await ApplyTouchpadHardwareSettingAsync(
-            () => TouchpadPrivateHidService.SetPress(normalizedMode),
+            () => TouchpadPrivateHidService.SetPress(
+                thresholds.LightStart,
+                thresholds.LightRelease,
+                thresholds.DeepStart,
+                thresholds.DeepRelease),
             () =>
             {
-                _configuration.Touchpad.PressSensitivityLevel = normalizedMode;
-                _configuration.Touchpad.LightPressThreshold = threshold;
-                Touchpad.PressSensitivityLevel = normalizedMode;
-                Touchpad.LightPressThreshold = threshold;
-                TouchpadPressSensitivityLevel = normalizedMode;
-                TouchpadLightPressThreshold = threshold;
+                _configuration.Touchpad.PressSensitivityLevel = TouchpadHardwareSettings.MapThresholdToPressSensitivityLevel(thresholds.LightStart);
+                _configuration.Touchpad.LightPressThreshold = thresholds.LightStart;
+                _configuration.Touchpad.LightPressReleaseThreshold = thresholds.LightRelease;
+                _configuration.Touchpad.DeepPressThreshold = thresholds.DeepStart;
+                _configuration.Touchpad.DeepPressReleaseThreshold = thresholds.DeepRelease;
+                Touchpad.PressSensitivityLevel = _configuration.Touchpad.PressSensitivityLevel;
+                Touchpad.LightPressThreshold = thresholds.LightStart;
+                Touchpad.LightPressReleaseThreshold = thresholds.LightRelease;
+                Touchpad.DeepPressThreshold = thresholds.DeepStart;
+                Touchpad.DeepPressReleaseThreshold = thresholds.DeepRelease;
+                TouchpadLightPressThreshold = thresholds.LightStart;
+                TouchpadLightPressReleaseThreshold = thresholds.LightRelease;
+                TouchpadDeepPressThreshold = thresholds.DeepStart;
+                TouchpadDeepPressReleaseThreshold = thresholds.DeepRelease;
             },
             reloadWorker: true);
     }
@@ -966,9 +1022,12 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
             ReloadPerformanceCycleModeItems();
             Touchpad = new TouchpadConfigurationViewModel(_configuration.Touchpad);
             TouchpadLightPressThreshold = Touchpad.LightPressThreshold;
+            TouchpadLightPressReleaseThreshold = Touchpad.LightPressReleaseThreshold;
+            TouchpadDeepPressThreshold = Touchpad.DeepPressThreshold;
+            TouchpadDeepPressReleaseThreshold = Touchpad.DeepPressReleaseThreshold;
             TouchpadLongPressDurationMs = Touchpad.LongPressDurationMs;
-            TouchpadPressSensitivityLevel = Touchpad.PressSensitivityLevel;
-            TouchpadFeedbackLevel = Touchpad.FeedbackLevel;
+            TouchpadFeedbackStrength = Touchpad.FeedbackStrength;
+            TouchpadDeepPressFeedbackStrength = Touchpad.DeepPressFeedbackStrength;
             TouchpadDeepPressHapticsEnabled = Touchpad.DeepPressHapticsEnabled;
             TouchpadEdgeSlideEnabled = Touchpad.EdgeSlideEnabled;
             SyncOsdPreferenceState();
@@ -1477,7 +1536,6 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
 
     private async Task ApplyTouchpadHardwareSettingAsync(Action hardwareAction, Action applyState, bool reloadWorker = false)
     {
-        await Task.Run(hardwareAction);
         applyState();
         SaveConfiguration();
 
@@ -1485,6 +1543,8 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
         {
             _ = ReloadWorkerAsync();
         }
+
+        await Task.Run(hardwareAction);
     }
 
     private async Task<bool> TryStopWorkerProcessAsync()

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using MeowBox.Core.Models;
 using Microsoft.Win32.SafeHandles;
 
 namespace MeowBox.Core.Services;
@@ -107,10 +108,47 @@ public static class TouchpadPrivateHidService
     }
 
     public static byte[] SetVibration(int mode)
-        => SendSequence(PacketCatalog.GetVibration(mode));
+    {
+        var level = TouchpadHardwareSettings.NormalizeLevel(mode);
+        return SetVibration(
+            TouchpadHardwareSettings.MapFeedbackLevelToStrength(level),
+            TouchpadHardwareSettings.MapFeedbackLevelToDeepPressStrength(level));
+    }
+
+    public static byte[] SetVibration(int normalStrength, int deepPressStrength)
+    {
+        var strengths = TouchpadHardwareSettings.NormalizeFeedbackStrengths(normalStrength, deepPressStrength);
+        return SendSequence(PacketCatalog.GetVibration(strengths.Normal, strengths.DeepPress));
+    }
 
     public static byte[] SetPress(int mode)
-        => SendSequence(PacketCatalog.GetPress(mode));
+    {
+        var level = TouchpadHardwareSettings.NormalizeLevel(mode);
+        var lightStart = TouchpadHardwareSettings.MapPressSensitivityLevelToThreshold(level);
+        return SetPress(
+            lightStart,
+            TouchpadHardwareSettings.CalculateDefaultLightPressReleaseThreshold(lightStart),
+            RuntimeDefaults.DefaultTouchpadDeepPressThreshold,
+            RuntimeDefaults.DefaultTouchpadDeepPressReleaseThreshold);
+    }
+
+    public static byte[] SetPress(
+        int lightStartThreshold,
+        int lightReleaseThreshold,
+        int deepStartThreshold,
+        int deepReleaseThreshold)
+    {
+        var thresholds = TouchpadHardwareSettings.NormalizePressThresholds(
+            lightStartThreshold,
+            lightReleaseThreshold,
+            deepStartThreshold,
+            deepReleaseThreshold);
+        return SendSequence(PacketCatalog.GetPress(
+            thresholds.LightStart,
+            thresholds.LightRelease,
+            thresholds.DeepStart,
+            thresholds.DeepRelease));
+    }
 
     public static string ToHex(ReadOnlySpan<byte> bytes)
         => BitConverter.ToString(bytes.ToArray()).Replace('-', ' ');
@@ -257,51 +295,49 @@ public static class TouchpadPrivateHidService
             Build(0x0D, 0x09, 0xFD, 0x01, 0x00, 0x03, 0x00, 0x00, 0x02, 0x32, 0xCE, 0x00)
         ];
 
-        public static IReadOnlyList<byte[]> GetVibration(int mode) => mode switch
+        public static IReadOnlyList<byte[]> GetVibration(int normalStrength, int deepPressStrength)
         {
-            1 =>
-            [
-                Build(0x0D, 0x0B, 0x31, 0x00, 0x00, 0x05, 0x00, 0x00, 0x5D, 0x38, 0x00, 0x50, 0x00),
-                Build(0x0D, 0x09, 0xFE, 0x01, 0x00, 0x03, 0x00, 0x00, 0x01, 0x5D, 0xA3),
-                Build(0x0D, 0x07, 0x5A, 0x01, 0x00, 0x01, 0x00, 0x04, 0x5D)
-            ],
-            2 =>
-            [
-                Build(0x0D, 0x0B, 0x61, 0x00, 0x00, 0x05, 0x00, 0x00, 0x5D, 0x50, 0x00, 0x68, 0x00),
-                Build(0x0D, 0x09, 0xFE, 0x01, 0x00, 0x03, 0x00, 0x00, 0x01, 0x5D, 0xA3),
-                Build(0x0D, 0x07, 0x5A, 0x01, 0x00, 0x01, 0x00, 0x04, 0x5D)
-            ],
-            3 =>
-            [
-                Build(0x0D, 0x0B, 0xB1, 0x00, 0x00, 0x05, 0x00, 0x00, 0x5D, 0x68, 0x00, 0x80, 0x00),
-                Build(0x0D, 0x09, 0xFE, 0x01, 0x00, 0x03, 0x00, 0x00, 0x01, 0x5D, 0xA3),
-                Build(0x0D, 0x07, 0x5A, 0x01, 0x00, 0x01, 0x00, 0x04, 0x5D)
-            ],
-            _ => throw new ArgumentOutOfRangeException(nameof(mode))
-        };
+            var payload = new[]
+            {
+                (byte)normalStrength,
+                (byte)0x00,
+                (byte)deepPressStrength,
+                (byte)0x00
+            };
 
-        public static IReadOnlyList<byte[]> GetPress(int mode) => mode switch
+            return
+            [
+                BuildConfigurationPacket(0x5D, payload),
+                BuildCommitPacket(0x5D, 0xA3),
+                BuildUnlockPacket(0x5D, 0x04)
+            ];
+        }
+
+        public static IReadOnlyList<byte[]> GetPress(
+            int lightStartThreshold,
+            int lightReleaseThreshold,
+            int deepStartThreshold,
+            int deepReleaseThreshold)
         {
-            1 =>
+            var payload = new[]
+            {
+                LowByte(lightStartThreshold),
+                HighByte(lightStartThreshold),
+                LowByte(lightReleaseThreshold),
+                HighByte(lightReleaseThreshold),
+                LowByte(deepStartThreshold),
+                HighByte(deepStartThreshold),
+                LowByte(deepReleaseThreshold),
+                HighByte(deepReleaseThreshold)
+            };
+
+            return
             [
-                Build(0x0D, 0x0F, 0x92, 0x00, 0x00, 0x09, 0x00, 0x00, 0x5B, 0x96, 0x00, 0x31, 0x00, 0xF4, 0x01, 0x90, 0x01),
-                Build(0x0D, 0x09, 0xFE, 0x01, 0x00, 0x03, 0x00, 0x00, 0x01, 0x5B, 0xA5),
-                Build(0x0D, 0x07, 0x54, 0x01, 0x00, 0x01, 0x00, 0x08, 0x5B)
-            ],
-            2 =>
-            [
-                Build(0x0D, 0x0F, 0x63, 0x00, 0x00, 0x09, 0x00, 0x00, 0x5B, 0x7D, 0x00, 0x29, 0x00, 0xF4, 0x01, 0x90, 0x01),
-                Build(0x0D, 0x09, 0xFE, 0x01, 0x00, 0x03, 0x00, 0x00, 0x01, 0x5B, 0xA5),
-                Build(0x0D, 0x07, 0x54, 0x01, 0x00, 0x01, 0x00, 0x08, 0x5B)
-            ],
-            3 =>
-            [
-                Build(0x0D, 0x0F, 0x7E, 0x00, 0x00, 0x09, 0x00, 0x00, 0x5B, 0x69, 0x00, 0x22, 0x00, 0xF4, 0x01, 0x90, 0x01),
-                Build(0x0D, 0x09, 0xFE, 0x01, 0x00, 0x03, 0x00, 0x00, 0x01, 0x5B, 0xA5),
-                Build(0x0D, 0x07, 0x54, 0x01, 0x00, 0x01, 0x00, 0x08, 0x5B)
-            ],
-            _ => throw new ArgumentOutOfRangeException(nameof(mode))
-        };
+                BuildConfigurationPacket(0x5B, payload),
+                BuildCommitPacket(0x5B, 0xA5),
+                BuildUnlockPacket(0x5B, 0x08)
+            ];
+        }
 
         private static byte[] Build(params byte[] prefix)
         {
@@ -309,6 +345,58 @@ public static class TouchpadPrivateHidService
             Array.Copy(prefix, bytes, prefix.Length);
             return bytes;
         }
+
+        private static byte[] BuildConfigurationPacket(byte commandId, byte[] payload)
+        {
+            var core = new byte[payload.Length + 6];
+            core[2] = checked((byte)(payload.Length + 1));
+            core[5] = commandId;
+            Array.Copy(payload, 0, core, 6, payload.Length);
+            return BuildPacket(core, checked((byte)(payload.Length + 7)));
+        }
+
+        private static byte[] BuildCommitPacket(byte commandId, byte commitId)
+        {
+            var core = new byte[]
+            {
+                0x01, 0x00, 0x03, 0x00, 0x00, 0x01, commandId, commitId
+            };
+            return BuildPacket(core, 0x09);
+        }
+
+        private static byte[] BuildUnlockPacket(byte commandId, byte dataLength)
+        {
+            var core = new byte[]
+            {
+                0x01, 0x00, 0x01, 0x00, dataLength, commandId
+            };
+            return BuildPacket(core, 0x07);
+        }
+
+        private static byte[] BuildPacket(byte[] core, byte payloadLength)
+        {
+            var bytes = new byte[ReportLength];
+            bytes[0] = 0x0D;
+            bytes[1] = payloadLength;
+            bytes[2] = CalculateChecksum(core);
+            Array.Copy(core, 0, bytes, 3, core.Length);
+            return bytes;
+        }
+
+        private static byte CalculateChecksum(byte[] core)
+        {
+            byte value = 0;
+            foreach (var item in core)
+            {
+                value ^= item;
+            }
+
+            return (byte)((value + 1) & 0xFF);
+        }
+
+        private static byte LowByte(int value) => (byte)(value & 0xFF);
+
+        private static byte HighByte(int value) => (byte)((value >> 8) & 0xFF);
     }
 
     private static class NativeMethods
