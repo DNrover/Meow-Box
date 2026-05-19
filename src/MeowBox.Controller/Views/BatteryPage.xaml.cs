@@ -73,7 +73,7 @@ public sealed partial class BatteryPage : Page
             nameof(MeowBoxController.CurrentPerformanceSelectionKey) or
             nameof(MeowBoxController.CurrentChargeLimitPercent) or
             nameof(MeowBoxController.SwitchToBatteryModeOnDcThresholdPercent) or
-            nameof(MeowBoxController.ApplyChargeLimitOnStartup) or
+            nameof(MeowBoxController.ResetChargeLimitToFullOnStartup) or
             nameof(MeowBoxController.ShowEasterEggs) or
             nameof(MeowBoxController.ServiceState) or
             nameof(MeowBoxController.WorkerElevated) or
@@ -119,7 +119,10 @@ public sealed partial class BatteryPage : Page
         RefreshButton.IsEnabled = Controller.ServiceRunning && Controller.WorkerElevated && !Controller.BatteryControlBusy;
         RefreshButton.Visibility = Controller.ServiceRunning && Controller.WorkerElevated ? Visibility.Visible : Visibility.Collapsed;
 
+        RuntimeNoticeInfoBar.Visibility = showNotice ? Visibility.Visible : Visibility.Collapsed;
         RuntimeNoticeInfoBar.IsOpen = showNotice;
+        Grid.SetRow(PerformanceCard, showNotice ? 1 : 0);
+        Grid.SetRow(ChargeCard, showNotice ? 2 : 1);
         PerformanceCard.Visibility = canShowBatteryControls ? Visibility.Visible : Visibility.Collapsed;
         ChargeCard.Visibility = canShowBatteryControls ? Visibility.Visible : Visibility.Collapsed;
 
@@ -136,7 +139,7 @@ public sealed partial class BatteryPage : Page
         SyncPerformanceModeSelectionUi(Controller.CurrentPerformanceSelectionKey, batterySaverTriggered);
         SetSelectedChargeLimit(_requestedChargeLimitPercent ?? Controller.CurrentChargeLimitPercent);
         SetSelectedComboBoxTag(SwitchToBatteryModeOnDcComboBox, Controller.SwitchToBatteryModeOnDcThresholdPercent);
-        ChargeStartupApplyToggleSwitch.IsOn = Controller.ApplyChargeLimitOnStartup;
+        ChargeStartupApplyToggleSwitch.IsOn = Controller.ResetChargeLimitToFullOnStartup;
 
         ChargeLimitSlider.IsEnabled = controlsEnabled;
         PerformanceCycleSettingsPanel.IsHitTestVisible = !Controller.BatteryControlBusy;
@@ -298,7 +301,7 @@ public sealed partial class BatteryPage : Page
             return;
         }
 
-        Controller.SetApplyChargeLimitOnStartup(ChargeStartupApplyToggleSwitch.IsOn);
+        Controller.SetResetChargeLimitToFullOnStartup(ChargeStartupApplyToggleSwitch.IsOn);
     }
 
     private void OnSwitchToBatteryModeOnDcSelectionChanged(object sender, SelectionChangedEventArgs e)

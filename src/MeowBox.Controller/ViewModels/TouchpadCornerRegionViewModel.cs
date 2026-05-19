@@ -28,7 +28,7 @@ public sealed class TouchpadCornerRegionViewModel : ObservableObject
         DeepPress = new TouchpadTriggerActionEditorViewModel(
             string.Format(
                 System.Globalization.CultureInfo.CurrentCulture,
-                ResourceStringService.GetString("Touchpad.Corner.DeepPressFormat", "{0} · Deep press"),
+                ResourceStringService.GetString("Touchpad.Corner.DeepPressFormat", "Deep press · {0}"),
                 regionLabel),
             ResourceStringService.GetString("Touchpad.Corner.DeepPressDescription", "Runs once when a touch that starts in this corner reaches the built-in deep press level."),
             null,
@@ -36,7 +36,7 @@ public sealed class TouchpadCornerRegionViewModel : ObservableObject
         LongPress = new TouchpadTriggerActionEditorViewModel(
             string.Format(
                 System.Globalization.CultureInfo.CurrentCulture,
-                ResourceStringService.GetString("Touchpad.Corner.LongPressFormat", "{0} · Long press"),
+                ResourceStringService.GetString("Touchpad.Corner.LongPressFormat", "Long press · {0}"),
                 regionLabel),
             ResourceStringService.GetString("Touchpad.Corner.LongPressDescription", "Runs after a touch that starts in this corner keeps holding until the configured long-press duration is reached."),
             null,

@@ -853,31 +853,31 @@
     <value>100%（关闭）</value>
   </data>
   <data name="Touchpad.Trigger.MainDeepPress.Title" xml:space="preserve">
-    <value>主区域 · 重按</value>
+    <value>重按 · 主区域</value>
   </data>
   <data name="Touchpad.Trigger.MainDeepPress.Description" xml:space="preserve">
     <value>当主区域内的触控达到内置重按力度时执行一次。L、R、LT、RT 区域不会触发这个动作。</value>
   </data>
   <data name="Touchpad.Trigger.FiveFingerPinchIn.Title" xml:space="preserve">
-    <value>五指 · 内收</value>
+    <value>五指手势 · 内收</value>
   </data>
   <data name="Touchpad.Trigger.FiveFingerPinchIn.Description" xml:space="preserve">
     <value>当五个触点一起向内收缩到足够幅度时执行一次，触发后会保持锁定，直到所有手指离开触控板。</value>
   </data>
   <data name="Touchpad.Trigger.FiveFingerPinchOut.Title" xml:space="preserve">
-    <value>五指 · 外展</value>
+    <value>五指手势 · 外展</value>
   </data>
   <data name="Touchpad.Trigger.FiveFingerPinchOut.Description" xml:space="preserve">
     <value>当五个触点一起向外展开到足够幅度时执行一次，触发后会保持锁定，直到所有手指离开触控板。</value>
   </data>
   <data name="Touchpad.Trigger.LeftSlide.Title" xml:space="preserve">
-    <value>左侧 · 拖动</value>
+    <value>滑动调节 · 左侧</value>
   </data>
   <data name="Touchpad.Trigger.LeftSlide.Description" xml:space="preserve">
     <value>选择在左侧边缘区域上下拖动时要控制的目标。</value>
   </data>
   <data name="Touchpad.Trigger.RightSlide.Title" xml:space="preserve">
-    <value>右侧 · 拖动</value>
+    <value>滑动调节 · 右侧</value>
   </data>
   <data name="Touchpad.Trigger.RightSlide.Description" xml:space="preserve">
     <value>选择在右侧边缘区域上下拖动时要控制的目标。</value>
@@ -967,13 +967,13 @@
     <value>从这个角落开始的触控可以运行独立的重按或长按动作。</value>
   </data>
   <data name="Touchpad.Corner.DeepPressFormat" xml:space="preserve">
-    <value>{0} · 重按</value>
+    <value>重按 · {0}</value>
   </data>
   <data name="Touchpad.Corner.DeepPressDescription" xml:space="preserve">
     <value>当从这个角落开始的触控达到内置重按力度时执行一次。</value>
   </data>
   <data name="Touchpad.Corner.LongPressFormat" xml:space="preserve">
-    <value>{0} · 长按</value>
+    <value>长按 · {0}</value>
   </data>
   <data name="Touchpad.Corner.LongPressDescription" xml:space="preserve">
     <value>当从这个角落开始的触控持续按住，直到达到已配置的长按时长后执行。</value>
@@ -1129,7 +1129,7 @@
     <value>设置</value>
   </data>
   <data name="ChargeStartupResetLabelTextBlock.Text" xml:space="preserve">
-    <value>开机时自动设置充电上限</value>
+    <value>下次开机时自动恢复充电上限为 100%</value>
   </data>
   <data name="MappingEnabledToggleSwitch.Header" xml:space="preserve">
     <value>启用</value>

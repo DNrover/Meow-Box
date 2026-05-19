@@ -368,7 +368,7 @@
                                     x:Uid="ChargeStartupResetLabelTextBlock"
                                     x:Name="ChargeStartupResetLabelTextBlock"
                                     Style="{StaticResource CardTitleTextBlockStyle}"
-                                    Text="Apply charge limit automatically on startup"
+                                    Text="Restore charge limit to 100% on next startup"
                                     TextWrapping="WrapWholeWords"
                                     VerticalAlignment="Center" />
                                 <ToggleSwitch

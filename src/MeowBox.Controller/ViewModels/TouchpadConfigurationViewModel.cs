@@ -53,28 +53,28 @@ public sealed class TouchpadConfigurationViewModel : ObservableObject
             : RuntimeDefaults.DefaultTouchpadSurfaceHeight;
 
         MainRegionDeepPress = new TouchpadTriggerActionEditorViewModel(
-            ResourceStringService.GetString("Touchpad.Trigger.MainDeepPress.Title", "Main region · Deep press"),
+            ResourceStringService.GetString("Touchpad.Trigger.MainDeepPress.Title", "Deep press · Main region"),
             ResourceStringService.GetString("Touchpad.Trigger.MainDeepPress.Description", "Runs once when a touch in the main region reaches the built-in deep press level. L, R, LT, and RT are excluded."),
             null,
             model.DeepPressAction);
         FiveFingerPinchIn = new TouchpadTriggerActionEditorViewModel(
-            ResourceStringService.GetString("Touchpad.Trigger.FiveFingerPinchIn.Title", "Five fingers · Pinch in"),
+            ResourceStringService.GetString("Touchpad.Trigger.FiveFingerPinchIn.Title", "Five-finger gesture · Pinch in"),
             ResourceStringService.GetString("Touchpad.Trigger.FiveFingerPinchIn.Description", "Runs once when five contacts move inward together far enough, then stays latched until all fingers are lifted."),
             null,
             model.FiveFingerPinchInAction);
         FiveFingerPinchOut = new TouchpadTriggerActionEditorViewModel(
-            ResourceStringService.GetString("Touchpad.Trigger.FiveFingerPinchOut.Title", "Five fingers · Pinch out"),
+            ResourceStringService.GetString("Touchpad.Trigger.FiveFingerPinchOut.Title", "Five-finger gesture · Pinch out"),
             ResourceStringService.GetString("Touchpad.Trigger.FiveFingerPinchOut.Description", "Runs once when five contacts spread outward together far enough, then stays latched until all fingers are lifted."),
             null,
             model.FiveFingerPinchOutAction);
         LeftEdgeSlide = new TouchpadTriggerActionEditorViewModel(
-            ResourceStringService.GetString("Touchpad.Trigger.LeftSlide.Title", "Left side · Drag"),
+            ResourceStringService.GetString("Touchpad.Trigger.LeftSlide.Title", "Slide adjust · Left side"),
             ResourceStringService.GetString("Touchpad.Trigger.LeftSlide.Description", "Choose what vertical dragging in the left edge region controls."),
             null,
             model.LeftEdgeSlideAction,
             simpleEdgeSlideMapping: true);
         RightEdgeSlide = new TouchpadTriggerActionEditorViewModel(
-            ResourceStringService.GetString("Touchpad.Trigger.RightSlide.Title", "Right side · Drag"),
+            ResourceStringService.GetString("Touchpad.Trigger.RightSlide.Title", "Slide adjust · Right side"),
             ResourceStringService.GetString("Touchpad.Trigger.RightSlide.Description", "Choose what vertical dragging in the right edge region controls."),
             null,
             model.RightEdgeSlideAction,
@@ -98,15 +98,15 @@ public sealed class TouchpadConfigurationViewModel : ObservableObject
         CornerRegions = [LeftTopCorner, RightTopCorner];
         AllActionEditors =
         [
-            MainRegionDeepPress,
             FiveFingerPinchIn,
             FiveFingerPinchOut,
-            LeftEdgeSlide,
-            RightEdgeSlide,
+            MainRegionDeepPress,
             LeftTopCorner.DeepPress,
             RightTopCorner.DeepPress,
             LeftTopCorner.LongPress,
-            RightTopCorner.LongPress
+            RightTopCorner.LongPress,
+            LeftEdgeSlide,
+            RightEdgeSlide
         ];
         SelectedActionEditor = AllActionEditors.FirstOrDefault();
 

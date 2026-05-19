@@ -397,11 +397,8 @@ internal sealed class WorkerHost : IDisposable
     {
         var startupCycleModeKey = BatteryControlCatalog.GetDefaultPerformanceModeCycleKey(
             _configuration.Preferences.PerformanceModeCycleKeys);
-        var preferredChargeLimitPercent = BatteryControlCatalog.NormalizeChargeLimitPercent(
-            _configuration.Preferences.PreferredChargeLimitPercent);
         var shouldRestorePerformanceMode = true;
-        var shouldRestoreChargeLimit = !_configuration.Preferences.ResetChargeLimitToFullOnStartup &&
-                                       preferredChargeLimitPercent < BatteryControlCatalog.DefaultChargeLimitPercent;
+        var shouldRestoreChargeLimit = _configuration.Preferences.ResetChargeLimitToFullOnStartup;
         if (!shouldRestorePerformanceMode && !shouldRestoreChargeLimit)
         {
             return;
@@ -426,10 +423,9 @@ internal sealed class WorkerHost : IDisposable
                 if (batterySaverAlreadyActive)
                 {
                     skippedBecauseBatterySaverWasAlreadyActive = true;
-                    return;
                 }
 
-                if (shouldRestorePerformanceMode)
+                if (!batterySaverAlreadyActive && shouldRestorePerformanceMode)
                 {
                     lock (_performanceModeSync)
                     {
@@ -439,10 +435,10 @@ internal sealed class WorkerHost : IDisposable
 
                 if (shouldRestoreChargeLimit)
                 {
-                    _batteryControlService.SetChargeLimitPercentFast(preferredChargeLimitPercent);
+                    _batteryControlService.SetChargeLimitPercentFast(BatteryControlCatalog.DefaultChargeLimitPercent);
                 }
             });
-            if (skippedBecauseBatterySaverWasAlreadyActive)
+            if (skippedBecauseBatterySaverWasAlreadyActive && !shouldRestoreChargeLimit)
             {
                 return;
             }

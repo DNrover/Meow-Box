@@ -42,7 +42,7 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
     private int _switchToBatteryModeOnDcThresholdPercent = BatteryControlCatalog.AutoSwitchNeverThreshold;
     private string _currentPerformanceModeKey = BatteryControlCatalog.DefaultPerformanceModeKey;
     private string _currentPerformanceSelectionKey = BatteryControlCatalog.DefaultSelectedPerformanceModeKey;
-    private bool _applyChargeLimitOnStartup = true;
+    private bool _resetChargeLimitToFullOnStartup;
     private int _currentChargeLimitPercent = BatteryControlCatalog.DefaultChargeLimitPercent;
     private int _osdDurationMs = RuntimeDefaults.DefaultOsdDurationMs;
     private string _osdDisplayMode = OsdDisplayModes.IconOnly;
@@ -256,10 +256,10 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
 
     public string CurrentChargeLimitLabel => BatteryControlCatalog.GetChargeLimitLabel(CurrentChargeLimitPercent);
 
-    public bool ApplyChargeLimitOnStartup
+    public bool ResetChargeLimitToFullOnStartup
     {
-        get => _applyChargeLimitOnStartup;
-        private set => SetProperty(ref _applyChargeLimitOnStartup, value);
+        get => _resetChargeLimitToFullOnStartup;
+        private set => SetProperty(ref _resetChargeLimitToFullOnStartup, value);
     }
 
     public bool BatteryControlsEnabled => ServiceRunning && WorkerElevated && BatteryStateKnown && BatteryControlSupported && !BatteryControlBusy;
@@ -635,10 +635,10 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
         }
     }
 
-    public void SetApplyChargeLimitOnStartup(bool enabled)
+    public void SetResetChargeLimitToFullOnStartup(bool enabled)
     {
-        _configuration.Preferences.ResetChargeLimitToFullOnStartup = !enabled;
-        ApplyChargeLimitOnStartup = enabled;
+        _configuration.Preferences.ResetChargeLimitToFullOnStartup = enabled;
+        ResetChargeLimitToFullOnStartup = enabled;
         SaveConfiguration();
     }
 
@@ -1018,7 +1018,7 @@ public sealed class MeowBoxController : ObservableObject, IDisposable
             ShowEasterEggs = _configuration.Preferences.ShowEasterEggs;
             SwitchToBatteryModeOnDcThresholdPercent = BatteryControlCatalog.NormalizeBatteryModeOnDcThresholdPercent(
                 _configuration.Preferences.SwitchToBatteryModeOnDcThresholdPercent);
-            ApplyChargeLimitOnStartup = !_configuration.Preferences.ResetChargeLimitToFullOnStartup;
+            ResetChargeLimitToFullOnStartup = _configuration.Preferences.ResetChargeLimitToFullOnStartup;
             ReloadPerformanceCycleModeItems();
             Touchpad = new TouchpadConfigurationViewModel(_configuration.Touchpad);
             TouchpadLightPressThreshold = Touchpad.LightPressThreshold;
