@@ -224,16 +224,17 @@ public sealed partial class TouchpadPage : Page
             return;
         }
 
-        var deepPressEnabled = !IsSelectedNever(TouchpadDeepPressThresholdComboBox);
+        var deepPressThreshold = IsSelectedNever(TouchpadDeepPressThresholdComboBox)
+            ? TouchpadHardwareSettings.DeepPressNeverThreshold
+            : GetSelectedIntValue(TouchpadDeepPressThresholdComboBox, Controller.TouchpadDeepPressThreshold);
         var thresholds = TouchpadHardwareSettings.NormalizeAutomaticPressThresholds(
             GetSelectedIntValue(TouchpadLightPressThresholdComboBox, Controller.TouchpadLightPressThreshold),
-            GetSelectedIntValue(TouchpadDeepPressThresholdComboBox, Controller.TouchpadDeepPressThreshold));
+            deepPressThreshold);
         var thresholdsChanged = thresholds.LightStart != Controller.TouchpadLightPressThreshold ||
             thresholds.LightRelease != Controller.TouchpadLightPressReleaseThreshold ||
             thresholds.DeepStart != Controller.TouchpadDeepPressThreshold ||
             thresholds.DeepRelease != Controller.TouchpadDeepPressReleaseThreshold;
-        var hapticsChanged = deepPressEnabled != Controller.TouchpadDeepPressHapticsEnabled;
-        if (!thresholdsChanged && !hapticsChanged)
+        if (!thresholdsChanged)
         {
             return;
         }
@@ -242,19 +243,11 @@ public sealed partial class TouchpadPage : Page
         {
             await RunTouchpadHardwareActionAsync(async () =>
             {
-                if (thresholdsChanged)
-                {
-                    await Controller.SetTouchpadHardwarePressAsync(
-                        thresholds.LightStart,
-                        thresholds.LightRelease,
-                        thresholds.DeepStart,
-                        thresholds.DeepRelease);
-                }
-
-                if (hapticsChanged)
-                {
-                    await Controller.SetTouchpadHardwareHapticAsync(deepPressEnabled);
-                }
+                await Controller.SetTouchpadHardwarePressAsync(
+                    thresholds.LightStart,
+                    thresholds.LightRelease,
+                    thresholds.DeepStart,
+                    thresholds.DeepRelease);
             });
         });
     }
@@ -321,13 +314,13 @@ public sealed partial class TouchpadPage : Page
     {
         _touchpadPreferencesLoading = true;
         SetSelectedIntValue(TouchpadLightPressThresholdComboBox, Controller.TouchpadLightPressThreshold);
-        if (Controller.TouchpadDeepPressHapticsEnabled)
+        if (Controller.TouchpadDeepPressThreshold >= TouchpadHardwareSettings.DeepPressNeverThreshold)
         {
-            SetSelectedIntValue(TouchpadDeepPressThresholdComboBox, Controller.TouchpadDeepPressThreshold);
+            SetSelectedNever(TouchpadDeepPressThresholdComboBox);
         }
         else
         {
-            SetSelectedNever(TouchpadDeepPressThresholdComboBox);
+            SetSelectedIntValue(TouchpadDeepPressThresholdComboBox, Controller.TouchpadDeepPressThreshold);
         }
 
         SetSelectedIntValue(TouchpadFeedbackStrengthComboBox, Controller.TouchpadFeedbackStrength);

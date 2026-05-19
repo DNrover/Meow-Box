@@ -338,9 +338,12 @@ public sealed class AppConfigService
         var lightPressThreshold = touchpad.LightPressThreshold > 0
             ? touchpad.LightPressThreshold
             : TouchpadHardwareSettings.MapPressSensitivityLevelToThreshold(touchpad.PressSensitivityLevel);
+        var deepPressThreshold = touchpad.DeepPressHapticsEnabled
+            ? touchpad.DeepPressThreshold
+            : TouchpadHardwareSettings.DeepPressNeverThreshold;
         var pressThresholds = TouchpadHardwareSettings.NormalizeAutomaticPressThresholds(
             lightPressThreshold,
-            touchpad.DeepPressThreshold);
+            deepPressThreshold);
         var feedbackStrength = touchpad.FeedbackStrength > 0
             ? touchpad.FeedbackStrength
             : TouchpadHardwareSettings.MapFeedbackLevelToStrength(touchpad.FeedbackLevel);

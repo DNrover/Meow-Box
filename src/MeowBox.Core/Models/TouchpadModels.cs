@@ -109,7 +109,8 @@ public static class TouchpadHardwareSettings
     public const int Medium = 2;
     public const int High = 3;
     public const int MinPressThreshold = 20;
-    public const int MaxPressThreshold = 4000;
+    public const int DeepPressNeverThreshold = 5000;
+    public const int MaxPressThreshold = DeepPressNeverThreshold;
     public const int MinPressReleaseThreshold = 0;
     public const int MinFeedbackStrength = 0;
     public const int MaxFeedbackStrength = 128;
