@@ -68,12 +68,29 @@ public sealed class BatteryControlService
     {
         var target = ResolveTarget(required: true)!;
         var rawCode = BatteryControlCatalog.GetPerformanceRawCode(modeKey);
+
+        int? previousChargeLimit;
+        lock (_stateSync)
+        {
+            previousChargeLimit = _cachedState?.ChargeLimitPercent;
+        }
+
         _ = Invoke(target, CreateBuffer(fun1: 0xFB00, fun2: 0x0800, fun3: rawCode, fun4: 0));
         Thread.Sleep(SettleDelayMs);
         var state = QueryState();
         if (!string.Equals(state.PerformanceModeKey, modeKey, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("Performance mode verification did not match the requested value.");
+        }
+
+        if (previousChargeLimit.HasValue
+            && previousChargeLimit.Value != BatteryControlCatalog.DefaultChargeLimitPercent
+            && state.ChargeLimitPercent != previousChargeLimit.Value)
+        {
+            var chargeLimitRawCode = BatteryControlCatalog.GetChargeLimitRawCode(previousChargeLimit.Value);
+            _ = Invoke(target, CreateBuffer(fun1: 0xFB00, fun2: 0x1000, fun3: 0x0002, fun4: chargeLimitRawCode));
+            Thread.Sleep(SettleDelayMs);
+            state = QueryState();
         }
 
         return state;
@@ -107,6 +124,18 @@ public sealed class BatteryControlService
             var rawCode = BatteryControlCatalog.GetPerformanceRawCode(normalizedModeKey);
             _ = Invoke(target, CreateBuffer(fun1: 0xFB00, fun2: 0x0800, fun3: rawCode, fun4: 0));
 
+            int? previousChargeLimit = null;
+            lock (_stateSync)
+            {
+                previousChargeLimit = _cachedState?.ChargeLimitPercent;
+            }
+
+            if (previousChargeLimit.HasValue && previousChargeLimit.Value != BatteryControlCatalog.DefaultChargeLimitPercent)
+            {
+                var chargeLimitRawCode = BatteryControlCatalog.GetChargeLimitRawCode(previousChargeLimit.Value);
+                _ = Invoke(target, CreateBuffer(fun1: 0xFB00, fun2: 0x1000, fun3: 0x0002, fun4: chargeLimitRawCode));
+            }
+
             BatteryControlState nextState;
             lock (_stateSync)
             {
@@ -120,7 +149,7 @@ public sealed class BatteryControlService
                         IsAcPowered = _windowsPowerModeService.IsAcPowered(),
                         BatteryLevelPercent = _windowsPowerModeService.GetBatteryLevelPercent(),
                         IsBatterySaverEnabled = string.Equals(normalizedModeKey, BatteryControlCatalog.Battery, StringComparison.OrdinalIgnoreCase),
-                        ChargeLimitPercent = BatteryControlCatalog.DefaultChargeLimitPercent
+                        ChargeLimitPercent = previousChargeLimit ?? BatteryControlCatalog.DefaultChargeLimitPercent
                     }
                     : CloneState(_cachedState);
 
@@ -131,6 +160,11 @@ public sealed class BatteryControlService
                 nextState.IsAcPowered = _windowsPowerModeService.IsAcPowered();
                 nextState.BatteryLevelPercent = _windowsPowerModeService.GetBatteryLevelPercent();
                 nextState.IsBatterySaverEnabled = string.Equals(normalizedModeKey, BatteryControlCatalog.Battery, StringComparison.OrdinalIgnoreCase);
+                if (previousChargeLimit.HasValue)
+                {
+                    nextState.ChargeLimitPercent = previousChargeLimit.Value;
+                }
+
                 _cachedState = CloneState(nextState);
             }
 
