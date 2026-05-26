@@ -3,7 +3,7 @@
 ## 版本信息
 
 - **分支**: `FixBatteryControl`
-- **目标版本**: v3.1.2
+- **目标版本**: v3.1.1
 - **目标机型**: Xiaomi Book Pro 14 2026
 - **修复提交**:
   - `4cbc10c` — fix: update battery charge limit handling in performance mode
