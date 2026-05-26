@@ -18,7 +18,12 @@ Meow Box 是一个适用于 **Xiaomi Book Pro 14 2026** 的厂商按键和触控
 
 ### ✨ 更新状况
 
-#### **v3.1.0**
+#### **v3.1.2**
+
+- 修复了切换性能模式（Fn+K、AC 插拔自动切换等）时，充电上限被小米固件静默重置为 100% 的问题
+- 修复了启动时不会从配置中恢复用户偏好的充电上限的问题，现在启动后会主动下发非默认的充电上限
+
+#### **v3.1.1**
 
 - 移除了 Windows 电源计划集成，避免修改亮度等系统设置
 - 为触控板轻按和重按模式加入更精细的触发阈值与反馈力度调节
@@ -145,6 +150,11 @@ Meow Box is a customization tool for **Xiaomi Book Pro 14 2026**, focused on OEM
 > The current codebase is a standalone adaptation of the author's previous project, [`Fn Mapping Tool`](https://github.com/leehyukshuai/Fn-Mapping-Tool), specifically tailored for `Xiaomi Book Pro 14 2026`. If your device does not match, you can use [`Fn Mapping Tool`](https://github.com/leehyukshuai/Fn-Mapping-Tool) for the supported version instead.
 
 ### ✨ Release status
+
+#### **v3.2.0**
+
+- Fixed the charge limit being silently reset to 100% by Xiaomi firmware when switching performance modes (Fn+K, automatic AC plug/unplug switching, etc.)
+- Fixed the startup path not restoring the user's preferred charge limit from configuration — non-default charge limits are now actively re-applied on startup
 
 #### **v3.1.0**
 
